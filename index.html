@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MobiLens — Predictive Mobility Intelligence</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#f4f7fb;
+    --surface:#ffffff;
+    --surface-2:#f8fafc;
+    --border:#e6ecf3;
+    --border-strong:#d5dee9;
+    --text:#0f172a;
+    --text-2:#475569;
+    --muted:#94a3b8;
+    --teal:#0891b2;
+    --teal-dark:#0e7490;
+    --teal-soft:#ecfeff;
+    --green:#10b981;
+    --green-dark:#059669;
+    --amber:#f59e0b;
+    --amber-dark:#d97706;
+    --red:#ef4444;
+    --red-dark:#dc2626;
+    --shadow-sm:0 1px 2px rgba(16,24,40,.04), 0 4px 12px rgba(16,24,40,.05);
+    --shadow-md:0 2px 6px rgba(16,24,40,.06), 0 12px 28px rgba(16,24,40,.08);
+    --mono:'SF Mono',ui-monospace,'Cascadia Code',Consolas,monospace;
+  }
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1100px 600px at 50% -10%, #eaf4fb 0%, transparent 60%),
+      radial-gradient(900px 500px at 100% 110%, #eefaf5 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* ---------- Layout ---------- */
+  .app{
+    display:grid;
+    grid-template-columns:264px minmax(0,1fr) 336px;
+    grid-template-rows:64px minmax(0,1fr) 88px;
+    grid-template-areas:
+      "head head head"
+      "left map  right"
+      "foot foot foot";
+    gap:14px;
+    padding:14px;
+    height:100vh;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    grid-area:head;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 18px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    box-shadow:var(--shadow-sm);
+    position:relative;overflow:hidden;
+  }
+  header::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,#22d3ee,#34d399 55%,#22d3ee);
+    opacity:.85;
+  }
+  .brand{display:flex;align-items:center;gap:13px}
+  .brand h1{font-size:17.5px;letter-spacing:-.2px;font-weight:800;color:#0b1526}
+  .brand h1 span{
+    background:linear-gradient(90deg,#0891b2,#059669);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .brand p{font-size:10px;color:var(--muted);letter-spacing:1.6px;
+    text-transform:uppercase;margin-top:3px;font-weight:600}
+  .head-right{display:flex;align-items:center;gap:16px}
+  .pill{
+    display:flex;align-items:center;gap:8px;
+    font-size:10.5px;letter-spacing:1.2px;font-weight:700;
+    padding:7px 14px;border-radius:999px;
+    border:1px solid #b8f0dc;
+    background:#f0fdf8;
+    color:#0d7a5b;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:#10b981;
+       box-shadow:0 0 0 3px rgba(16,185,129,.18);animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+  .clock{text-align:right;padding-left:16px;border-left:1px solid var(--border)}
+  .clock b{display:block;font-family:var(--mono);font-size:20px;letter-spacing:.5px;
+    color:#0b1526;font-weight:700;line-height:1.1}
+  .clock small{font-size:9px;letter-spacing:2px;color:var(--muted);font-weight:600}
+
+  /* ---------- Panels ---------- */
+  aside{display:flex;flex-direction:column;gap:14px;min-height:0;overflow:hidden}
+  .left{grid-area:left}
+  .right{grid-area:right}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:14px;
+    display:flex;flex-direction:column;gap:11px;
+    min-height:0;
+    box-shadow:var(--shadow-sm);
+  }
+  .card.grow{flex:1;overflow:hidden}
+  .card h2{
+    font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--muted);font-weight:700;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .tag{
+    font-size:9px;letter-spacing:.7px;font-weight:700;padding:3px 8px;border-radius:6px;
+    background:var(--teal-soft);color:var(--teal-dark);border:1px solid #cffafe;
+  }
+
+  /* ---------- Controls ---------- */
+  .btn-row{display:flex;gap:8px}
+  .btn{
+    flex:1;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:700;
+    padding:10px 8px;border-radius:10px;
+    background:var(--surface);border:1px solid var(--border-strong);color:var(--text-2);
+    transition:.16s;letter-spacing:.2px;
+  }
+  .btn:hover{background:var(--surface-2);border-color:#b8c6d6;color:var(--text)}
+  .btn.primary{
+    background:linear-gradient(135deg,#0891b2,#0e7490);
+    border-color:#0e7490;color:#fff;
+    box-shadow:0 2px 8px rgba(8,145,178,.28);
+  }
+  .btn.primary:hover{background:linear-gradient(135deg,#0e7490,#155e75);box-shadow:0 3px 12px rgba(8,145,178,.35)}
+  .btn.warn{
+    background:#fef2f2;border-color:#fecaca;color:var(--red-dark);
+  }
+  .btn.warn:hover{background:#fee2e2;border-color:#fca5a5}
+
+  .speeds{display:flex;gap:6px}
+  .chip{
+    flex:1;cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:700;
+    padding:7px 0;border-radius:8px;background:var(--surface);border:1px solid var(--border);
+    color:var(--muted);transition:.15s;
+  }
+  .chip:hover{background:var(--surface-2);color:var(--text-2)}
+  .chip.active{
+    background:var(--teal-soft);border-color:#a5f3fc;color:var(--teal-dark);
+  }
+
+  .scenarios{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .sc{
+    cursor:pointer;font-family:inherit;font-size:10.5px;font-weight:700;letter-spacing:.1px;
+    padding:10px 4px;border-radius:9px;background:var(--surface);
+    border:1px solid var(--border);color:var(--text-2);transition:.15s;
+  }
+  .sc:hover{background:var(--surface-2);border-color:var(--border-strong);color:var(--text)}
+  .sc.active{
+    background:linear-gradient(135deg,#ecfdf5,#ecfeff);
+    border-color:#a7f3d0;color:#047857;
+    box-shadow:0 1px 6px rgba(16,185,129,.15);
+  }
+
+  /* ---------- Transit ---------- */
+  .transit{display:flex;flex-direction:column;gap:11px;overflow-y:auto;padding-right:2px}
+  .tr{display:grid;grid-template-columns:1fr 40px;gap:4px 8px}
+  .tr-name{grid-column:1/-1;font-size:10.5px;color:var(--text-2);font-weight:600}
+  .tr-bar{height:6px;background:#eef2f7;border-radius:3px;overflow:hidden}
+  .tr-bar i{display:block;height:100%;border-radius:3px;transition:width .5s ease, background .5s}
+  .tr-val{font-family:var(--mono);font-size:10.5px;text-align:right;font-weight:700}
+
+  /* ---------- Map ---------- */
+  .map-wrap{
+    grid-area:map;position:relative;min-height:0;
+    background:linear-gradient(180deg,#ffffff 0%,#f7fafd 100%);
+    border:1px solid var(--border);border-radius:16px;overflow:hidden;
+    box-shadow:var(--shadow-sm);
+  }
+  #map{width:100%;height:100%;display:block}
+
+  .legend{
+    position:absolute;top:14px;left:16px;display:flex;gap:16px;
+    font-size:9.5px;letter-spacing:1px;color:var(--text-2);text-transform:uppercase;
+    background:rgba(255,255,255,.92);padding:8px 14px;border-radius:10px;
+    border:1px solid var(--border);backdrop-filter:blur(8px);
+    box-shadow:var(--shadow-sm);font-weight:700;
+  }
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+
+  .route-card{
+    position:absolute;bottom:16px;left:16px;width:256px;
+    background:rgba(255,255,255,.96);border:1px solid var(--border);
+    border-radius:14px;padding:13px 15px;backdrop-filter:blur(10px);
+    display:flex;flex-direction:column;gap:8px;
+    box-shadow:var(--shadow-md);
+  }
+  .rc-head{display:flex;justify-content:space-between;align-items:center;
+    font-size:9.5px;letter-spacing:1.4px;color:var(--muted);
+    text-transform:uppercase;font-weight:700}
+  .rc-od{font-family:var(--mono);color:var(--teal-dark);font-size:11px;letter-spacing:1px}
+  .rc-row{display:flex;align-items:center;gap:9px;font-size:11.5px}
+  .rc-dot{width:8px;height:8px;border-radius:2px;flex:none}
+  .rc-dot.now{background:#0284c7;box-shadow:0 0 0 3px rgba(2,132,199,.15)}
+  .rc-dot.pred{background:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.15)}
+  .rc-label{color:var(--text-2);flex:1;font-weight:500}
+  .rc-val{font-family:var(--mono);color:var(--text);font-weight:700}
+  .rc-note{
+    font-size:10.5px;line-height:1.5;font-weight:600;color:#047857;
+    border-top:1px solid #ecfdf5;padding-top:9px;margin-top:2px;
+  }
+
+  .tooltip{
+    position:absolute;pointer-events:none;opacity:0;transform:translateY(-4px);
+    transition:.13s;background:rgba(255,255,255,.98);border:1px solid var(--border-strong);
+    border-radius:10px;padding:10px 13px;font-size:11px;min-width:170px;
+    box-shadow:var(--shadow-md);z-index:20;
+  }
+  .tooltip.show{opacity:1;transform:translateY(0)}
+  .tooltip b{display:block;font-size:11.5px;margin-bottom:6px;color:var(--text)}
+  .tip-row{display:flex;justify-content:space-between;gap:14px;color:var(--muted);font-size:10.5px;margin-top:3px}
+  .tip-row span:last-child{font-family:var(--mono);color:var(--text-2);font-weight:700}
+
+  /* ---------- Prediction list ---------- */
+  .pred-list{display:flex;flex-direction:column;gap:11px;overflow-y:auto;padding-right:2px}
+  .pred{display:flex;flex-direction:column;gap:6px}
+  .pred-top{display:flex;justify-content:space-between;font-size:11px;color:var(--text-2);font-weight:600}
+  .pred-top .pv{font-family:var(--mono);font-weight:800;font-size:11px}
+  .bar{height:6px;background:#eef2f7;border-radius:3px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:3px;transition:width .5s ease, background .5s}
+
+  /* ---------- Alert feed ---------- */
+  .feed{display:flex;flex-direction:column;gap:9px;overflow-y:auto;padding-right:2px}
+  .alert{
+    border-radius:10px;padding:10px 12px;
+    border-left:3px solid var(--amber);
+    background:#fffbeb;
+    animation:slideIn .3s ease;
+  }
+  .alert.high{border-left-color:var(--red);background:#fef2f2}
+  .alert.info{border-left-color:var(--teal);background:#f0f9ff}
+  @keyframes slideIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+  .a-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .a-time{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:600}
+  .a-badge{
+    font-size:8.5px;letter-spacing:.9px;font-weight:800;padding:2px 7px;border-radius:5px;
+    background:rgba(245,158,11,.18);color:var(--amber-dark);
+  }
+  .alert.high .a-badge{background:rgba(239,68,68,.15);color:var(--red-dark)}
+  .alert.info .a-badge{background:rgba(8,145,178,.13);color:var(--teal-dark)}
+  .a-name{font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:3px}
+  .a-msg{font-size:10.5px;line-height:1.5;color:var(--text-2)}
+
+  /* ---------- Footer metrics ---------- */
+  footer{
+    grid-area:foot;display:grid;grid-template-columns:repeat(6,1fr);gap:12px;
+  }
+  .metric{
+    background:var(--surface);
+    border:1px solid var(--border);border-radius:14px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    position:relative;overflow:hidden;
+    box-shadow:var(--shadow-sm);
+  }
+  .metric::after{
+    content:'';position:absolute;left:14px;right:14px;bottom:0;height:2px;
+    border-radius:2px 2px 0 0;
+    background:linear-gradient(90deg,transparent,#0891b2,transparent);opacity:.35;
+  }
+  .mv{font-family:var(--mono);font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+  .mv.g{color:var(--green-dark)} .mv.a{color:var(--amber-dark)}
+  .mv.r{color:var(--red-dark)} .mv.c{color:var(--teal-dark)}
+  .ml{font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+  /* ---------- SVG styles ---------- */
+  .edge-base{stroke:#e8eef5;stroke-width:14;stroke-linecap:round}
+  .edge-flow{stroke-linecap:round;transition:stroke .4s linear, stroke-width .4s linear}
+  .edge-flow.hot{stroke-dasharray:11 9;animation:dash 1.1s linear infinite}
+  @keyframes dash{to{stroke-dashoffset:-20}}
+  .edge-hit{stroke:transparent;stroke-width:22;stroke-linecap:round;cursor:pointer;pointer-events:stroke}
+  .node{fill:#ffffff;stroke:#cbd5e1;stroke-width:2}
+  .node-label{fill:#94a3b8;font-size:10px;font-family:var(--mono);font-weight:700;
+    text-anchor:middle;letter-spacing:.5px}
+  .veh{fill:#64748b;opacity:.45}
+  .inc-ring{fill:none;stroke:#ef4444;stroke-width:2;opacity:.85;
+    animation:ring 1.4s ease-out infinite;transform-origin:center;transform-box:fill-box}
+  @keyframes ring{0%{r:4;opacity:.9}100%{r:22;opacity:0}}
+  .inc-core{fill:#ef4444;filter:drop-shadow(0 0 5px rgba(239,68,68,.6))}
+  .route-now{stroke:#0284c7;stroke-width:4;opacity:.5;fill:none;
+    stroke-linecap:round;stroke-linejoin:round}
+  .route-pred{stroke:#059669;stroke-width:5;opacity:.95;fill:none;
+    stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:13 9;
+    animation:dash 1s linear infinite;filter:drop-shadow(0 0 6px rgba(5,150,105,.45))}
+
+  /* ---------- Scrollbars ---------- */
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#dbe3ec;border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:#c4d0dd}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:1150px){
+    .app{
+      grid-template-columns:1fr;
+      grid-template-rows:auto auto 460px auto auto;
+      grid-template-areas:"head" "left" "map" "right" "foot";
+      height:auto;min-height:100vh;overflow:auto;
+    }
+    body{overflow:auto}
+    footer{grid-template-columns:repeat(3,1fr)}
+    .left,.right{flex-direction:row;flex-wrap:wrap}
+    .card{flex:1 1 250px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ================= HEADER ================= -->
+  <header>
+    <div class="brand">
+      <svg width="36" height="36" viewBox="0 0 34 34">
+        <defs>
+          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#34d399"/>
+          </linearGradient>
+        </defs>
+        <path d="M17 2 L30 10 L30 24 L17 32 L4 24 L4 10 Z" fill="none"
+              stroke="url(#lg)" stroke-width="1.8" opacity=".95"/>
+        <circle cx="17" cy="17" r="5" fill="url(#lg)"/>
+        <circle cx="17" cy="17" r="9" fill="none" stroke="url(#lg)" stroke-width=".9" opacity=".45"/>
+      </svg>
+      <div>
+        <h1>Mobi<span>Lens</span></h1>
+        <p>Predictive Mobility Intelligence</p>
+      </div>
+    </div>
+    <div class="head-right">
+      <div class="pill"><span class="dot"></span>SIMULATION LIVE</div>
+      <div class="clock">
+        <b id="simTime">07:00</b>
+        <small>SIM TIME</small>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= LEFT PANEL ================= -->
+  <aside class="left">
+
+    <section class="card">
+      <h2>Simulation Control</h2>
+      <div class="btn-row">
+        <button id="playBtn" class="btn primary">⏸ Pause</button>
+      </div>
+      <div class="btn-row">
+        <button id="incidentBtn" class="btn warn">⚠ Inject Incident</button>
+      </div>
+      <div class="speeds">
+        <button class="chip active" data-speed="1">1×</button>
+        <button class="chip" data-speed="2">2×</button>
+        <button class="chip" data-speed="4">4×</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Scenario</h2>
+      <div class="scenarios">
+        <button class="sc active" data-sc="normal">Normal Flow</button>
+        <button class="sc" data-sc="rush">Rush Hour</button>
+        <button class="sc" data-sc="accident">Accident</button>
+        <button class="sc" data-sc="rain">Heavy Rain</button>
+        <button class="sc" data-sc="event">Major Event</button>
+        <button class="sc" data-sc="night">Off-Peak</button>
+      </div>
+    </section>
+
+    <section class="card grow">
+      <h2>Transit Demand Forecast <span class="tag">+15 MIN</span></h2>
+      <div id="transit" class="transit"></div>
+    </section>
+
+  </aside>
+
+  <!-- ================= MAP ================= -->
+  <main class="map-wrap" id="mapWrap">
+    <svg id="map" viewBox="0 0 800 520" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M40 0H0V40" fill="none" stroke="#eef3f9" stroke-width="1"/>
+        </pattern>
+      </defs>
+      <rect width="800" height="520" fill="url(#grid)" opacity=".9"/>
+    </svg>
+
+    <div class="legend">
+      <span><i style="background:#10b981"></i>Low</span>
+      <span><i style="background:#f59e0b"></i>Moderate</span>
+      <span><i style="background:#ef4444"></i>High</span>
+    </div>
+
+    <div class="route-card">
+      <div class="rc-head"><span>Route Advisor</span><span class="rc-od">A → L</span></div>
+      <div class="rc-row">
+        <span class="rc-dot now"></span>
+        <span class="rc-label">Route A · now</span>
+        <span class="rc-val" id="rcNow">—</span>
+      </div>
+      <div class="rc-row">
+        <span class="rc-dot pred"></span>
+        <span class="rc-label">Route B · +10 min</span>
+        <span class="rc-val" id="rcPred">—</span>
+      </div>
+      <div class="rc-note" id="rcNote">Calculating optimal corridor…</div>
+    </div>
+
+    <div class="tooltip" id="tip"></div>
+  </main>
+
+  <!-- ================= RIGHT PANEL ================= -->
+  <aside class="right">
+
+    <section class="card">
+      <h2>Predicted Congestion Risk <span class="tag">+10 MIN</span></h2>
+      <div id="predList" class="pred-list"></div>
+    </section>
+
+    <section class="card grow">
+      <h2>Alert Feed <span class="tag" id="alertCount">0</span></h2>
+      <div id="alertFeed" class="feed"></div>
+    </section>
+
+  </aside>
+
+  <!-- ================= FOOTER METRICS ================= -->
+  <footer>
+    <div class="metric"><span class="mv g" id="mAcc">—</span><span class="ml">Prediction accuracy</span></div>
+    <div class="metric"><span class="mv c" id="mLead">—</span><span class="ml">Avg warning lead</span></div>
+    <div class="metric"><span class="mv a" id="mRisk">—</span><span class="ml">High-risk corridors</span></div>
+    <div class="metric"><span class="mv r" id="mInc">—</span><span class="ml">Active incidents</span></div>
+    <div class="metric"><span class="mv" id="mVeh">—</span><span class="ml">Vehicles tracked</span></div>
+    <div class="metric"><span class="mv g" id="mCo2">—</span><span class="ml">Est. CO₂ saved</span></div>
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   MobiLens — Predictive Mobility Engine (Demo Simulation)
+   All data is simulated for demonstration purposes.
+   ============================================================ */
+
+/* ---------------- 1. ROAD NETWORK ---------------- */
+const NODES = {
+  A:{x:110,y: 90}, B:{x:300,y: 90}, C:{x:490,y: 90}, D:{x:680,y: 90},
+  E:{x:110,y:260}, F:{x:300,y:260}, G:{x:490,y:260}, H:{x:680,y:260},
+  I:{x:110,y:430}, J:{x:300,y:430}, K:{x:490,y:430}, L:{x:680,y:430}
+};
+
+const EDGE_DEFS = [
+  ['AB','A','B','North Ring West',      0.55],
+  ['BC','B','C','North Ring Central',   0.72],
+  ['CD','C','D','North Ring East',      0.48],
+  ['EF','E','F','Central Ave West',     0.66],
+  ['FG','F','G','Central Ave',          0.88],
+  ['GH','G','H','Central Ave East',     0.58],
+  ['IJ','I','J','South Link West',      0.42],
+  ['JK','J','K','South Link Central',   0.60],
+  ['KL','K','L','South Link East',      0.38],
+  ['AE','A','E','West End North',       0.50],
+  ['EI','E','I','West End South',       0.44],
+  ['BF','B','F','Airport Rd North',     0.62],
+  ['FJ','F','J','Airport Rd South',     0.55],
+  ['CG','C','G','Midtown North',        0.78],
+  ['GK','G','K','Midtown South',        0.64],
+  ['DH','D','H','East Bypass North',    0.40],
+  ['HL','H','L','East Bypass South',    0.34]
+];
+
+const EDGES = EDGE_DEFS.map(([id,a,b,name,base]) => ({id,a,b,name,base}));
+const EDGE_BY_ID = Object.fromEntries(EDGES.map(e => [e.id, e]));
+
+/* adjacency */
+const ADJ = {};
+Object.keys(NODES).forEach(n => ADJ[n] = []);
+EDGES.forEach(e => {
+  ADJ[e.a].push({edge:e, other:e.b});
+  ADJ[e.b].push({edge:e, other:e.a});
+  e.len = Math.hypot(NODES[e.a].x - NODES[e.b].x, NODES[e.a].y - NODES[e.b].y);
+});
+
+/* node-to-node hop distances (BFS) */
+const NODE_DIST = {};
+Object.keys(NODES).forEach(src => {
+  const d = {[src]:0}, q = [src];
+  while (q.length) {
+    const u = q.shift();
+    for (const {other} of ADJ[u]) {
+      if (d[other] === undefined) { d[other] = d[u] + 1; q.push(other); }
+    }
+  }
+  NODE_DIST[src] = d;
+});
+
+/* edge-to-edge hop distance matrix (for incident propagation) */
+const EDGE_DIST = {};
+EDGES.forEach(e1 => {
+  EDGE_DIST[e1.id] = {};
+  EDGES.forEach(e2 => {
+    let m = Infinity;
+    for (const u of [e1.a, e1.b])
+      for (const v of [e2.a, e2.b])
+        m = Math.min(m, NODE_DIST[u][v]);
+    EDGE_DIST[e1.id][e2.id] = m;
+  });
+});
+
+/* ---------------- 2. STATE ---------------- */
+const state = {
+  time: 7 * 60,
+  running: true,
+  speed: 1,
+  scenario: 'normal',
+  demandMul: 1,
+  weather: 0,
+  incidents: [],
+  congestion: {},
+  predicted: {},
+  history: {},
+  above: {},
+  alerts: [],
+  stats: { acc: 88, lead: 11, co2: 0 }
+};
+
+EDGES.forEach(e => {
+  state.congestion[e.id] = 0.30;
+  state.predicted[e.id]  = 0.30;
+  state.history[e.id]    = [];
+  state.above[e.id]      = false;
+});
+
+/* ---------------- 3. DEMAND MODEL ---------------- */
+function baseDemand(t) {
+  const h = t / 60;
+  const morning = Math.exp(-Math.pow(h - 8.3, 2) / (2 * 0.85 * 0.85));
+  const evening = Math.exp(-Math.pow(h - 17.6, 2) / (2 * 1.05 * 1.05));
+  return 0.28 + 0.72 * Math.max(morning, evening, 0.15);
+}
+
+/* ---------------- 4. CONGESTION ENGINE ---------------- */
+function computeCongestion() {
+  const d = baseDemand(state.time) * state.demandMul;
+
+  for (const e of EDGES) {
+    let incidentBoost = 0;
+    for (const inc of state.incidents) {
+      const hop = EDGE_DIST[e.id][inc.edge];
+      incidentBoost += inc.severity * inc.strength * Math.exp(-hop / 1.6);
+    }
+    const noise = (Math.random() - 0.5) * 0.055;
+    let raw = e.base * (0.55 + 0.85 * d) + incidentBoost + state.weather + noise;
+    raw = Math.max(0.02, Math.min(1, raw));
+
+    const prev = state.congestion[e.id];
+    state.congestion[e.id] = prev * 0.62 + raw * 0.38;
+  }
+}
+
+function computePrediction() {
+  for (const e of EDGES) {
+    const h = state.history[e.id];
+    h.push(state.congestion[e.id]);
+    if (h.length > 6) h.shift();
+
+    let pred = state.congestion[e.id];
+    if (h.length >= 3) {
+      const slope = (h[h.length - 1] - h[0]) / (h.length - 1);
+      pred = state.congestion[e.id] + slope * 8;
+    }
+    state.predicted[e.id] = Math.max(0, Math.min(1, pred));
+  }
+}
+
+/* ---------------- 5. INCIDENTS ---------------- */
+let incSeq = 0;
+function spawnIncident(edgeId, severity, label) {
+  state.incidents.push({
+    id: ++incSeq,
+    edge: edgeId,
+    severity,
+    label,
+    start: state.time,
+    duration: 14 + Math.random() * 10,
+    strength: 1
+  });
+  if (state.incidents.length > 4) state.incidents.shift();
+  renderIncidents();
+  pushAlert({
+    level: 'info',
+    badge: 'INCIDENT',
+    time: state.time,
+    name: EDGE_BY_ID[edgeId].name,
+    msg: `${label} reported. MobiLens is modelling congestion propagation across the corridor.`
+  });
+}
+
+function updateIncidents() {
+  state.incidents = state.incidents.filter(inc => {
+    const age = state.time - inc.start;
+    if (age > inc.duration) return false;
+    inc.strength = Math.min(1, age / 2) * Math.min(1, (inc.duration - age) / 3);
+    return true;
+  });
+
+  if (state.incidents.length < 2 && Math.random() < 0.014) {
+    const e = EDGES[Math.floor(Math.random() * EDGES.length)];
+    const kinds = ['Minor collision', 'Roadworks', 'Vehicle breakdown', 'Signal failure'];
+    spawnIncident(e.id, 0.45 + Math.random() * 0.4, kinds[Math.floor(Math.random() * kinds.length)]);
+  }
+}
+
+/* ---------------- 6. ALERT ENGINE ---------------- */
+const feedEl = document.getElementById('alertFeed');
+const alertCountEl = document.getElementById('alertCount');
+
+function pushAlert(a) {
+  state.alerts.unshift(a);
+  if (state.alerts.length > 25) state.alerts.pop();
+
+  const div = document.createElement('div');
+  div.className = 'alert ' + a.level;
+  div.innerHTML = `
+    <div class="a-top">
+      <span class="a-time">${fmtTime(a.time)}</span>
+      <span class="a-badge">${a.badge}</span>
+    </div>
+    <div class="a-name">${a.name}</div>
+    <div class="a-msg">${a.msg}</div>`;
+  feedEl.prepend(div);
+  while (feedEl.children.length > 25) feedEl.lastChild.remove();
+
+  alertCountEl.textContent = state.alerts.length;
+}
+
+function detectAlerts() {
+  for (const e of EDGES) {
+    const p = state.predicted[e.id];
+
+    if (p > 0.68 && !state.above[e.id]) {
+      state.above[e.id] = true;
+      const high = p > 0.85;
+      pushAlert({
+        level: high ? 'high' : 'moderate',
+        badge: high ? 'HIGH RISK' : 'PREDICTED',
+        time: state.time,
+        name: e.name,
+        msg: high
+          ? `High congestion risk predicted on ${e.name}. Alternative route recommended.`
+          : `Emerging congestion detected on ${e.name}. Monitoring corridor.`
+      });
+      state.stats.lead = 8 + Math.random() * 6;
+    }
+    if (p < 0.55) state.above[e.id] = false;
+  }
+}
+
+/* ---------------- 7. ROUTING (Dijkstra) ---------------- */
+function travelMinutes(edge, congestion) {
+  const km = edge.len * 0.01;
+  const speed = Math.max(12, 62 * (1 - 0.78 * congestion));
+  return (km / speed) * 60;
+}
+
+function dijkstra(start, end, costFn) {
+  const dist = {}, prev = {}, visited = new Set();
+  Object.keys(NODES).forEach(n => dist[n] = Infinity);
+  dist[start] = 0;
+
+  while (visited.size < Object.keys(NODES).length) {
+    let u = null, best = Infinity;
+    for (const n in dist) if (!visited.has(n) && dist[n] < best) { best = dist[n]; u = n; }
+    if (u === null || u === end) break;
+    visited.add(u);
+
+    for (const {edge, other} of ADJ[u]) {
+      const c = costFn(edge);
+      if (dist[u] + c < dist[other]) {
+        dist[other] = dist[u] + c;
+        prev[other] = {node: u, edge};
+      }
+    }
+  }
+  if (dist[end] === Infinity) return null;
+
+  const edges = [], nodes = [end];
+  let cur = end;
+  while (cur !== start) {
+    const p = prev[cur];
+    edges.unshift(p.edge);
+    nodes.unshift(p.node);
+    cur = p.node;
+  }
+  return {edges, nodes, time: dist[end]};
+}
+
+/* ---------------- 8. MAP RENDERING ---------------- */
+const SVGNS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('map');
+const mapWrap = document.getElementById('mapWrap');
+const tip = document.getElementById('tip');
+
+function svgEl(tag, attrs) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+const baseLayer = svgEl('g'), flowLayer = svgEl('g'),
+      routeLayer = svgEl('g'), incLayer = svgEl('g'),
+      hitLayer = svgEl('g'), nodeLayer = svgEl('g'), vehLayer = svgEl('g');
+
+[baseLayer, flowLayer, routeLayer, incLayer, hitLayer, nodeLayer, vehLayer]
+  .forEach(l => svg.appendChild(l));
+
+/* edges */
+EDGES.forEach(e => {
+  const A = NODES[e.a], B = NODES[e.b];
+  baseLayer.appendChild(svgEl('line', {
+    x1:A.x, y1:A.y, x2:B.x, y2:B.y, class:'edge-base'
+  }));
+
+  const flow = svgEl('line', {
+    x1:A.x, y1:A.y, x2:B.x, y2:B.y,
+    class:'edge-flow', 'stroke-width':8
+  });
+  flowLayer.appendChild(flow);
+  e.flowEl = flow;
+
+  const hit = svgEl('line', {
+    x1:A.x, y1:A.y, x2:B.x, y2:B.y, class:'edge-hit'
+  });
+  hit.addEventListener('mousemove', ev => showTip(ev, e));
+  hit.addEventListener('mouseleave', hideTip);
+  hitLayer.appendChild(hit);
+});
+
+/* nodes */
+Object.entries(NODES).forEach(([id, n]) => {
+  nodeLayer.appendChild(svgEl('circle', {cx:n.x, cy:n.y, r:5.5, class:'node'}));
+  const t = svgEl('text', {x:n.x, y:n.y - 13, class:'node-label'});
+  t.textContent = id;
+  nodeLayer.appendChild(t);
+});
+
+/* route polylines */
+const routeNowEl  = svgEl('polyline', {class:'route-now',  points:''});
+const routePredEl = svgEl('polyline', {class:'route-pred', points:''});
+routeLayer.appendChild(routeNowEl);
+routeLayer.appendChild(routePredEl);
+
+/* vehicles */
+const vehicles = [];
+EDGES.forEach(e => {
+  const count = 2 + Math.round(e.base * 3);
+  for (let i = 0; i < count; i++) {
+    const el = svgEl('circle', {r:3.2, class:'veh'});
+    vehLayer.appendChild(el);
+    vehicles.push({edgeId:e.id, u:Math.random()*2, el});
+  }
+});
+
+/* tooltip */
+function showTip(ev, e) {
+  const c = state.congestion[e.id], p = state.predicted[e.id];
+  tip.innerHTML = `
+    <b>${e.name}</b>
+    <div class="tip-row"><span>Current load</span><span>${Math.round(c*100)}%</span></div>
+    <div class="tip-row"><span>Predicted +10m</span><span>${Math.round(p*100)}%</span></div>
+    <div class="tip-row"><span>Lanes</span><span>${2 + Math.round(e.base*2)}</span></div>`;
+  const r = mapWrap.getBoundingClientRect();
+  tip.style.left = Math.min(ev.clientX - r.left + 16, r.width - 190) + 'px';
+  tip.style.top  = Math.min(ev.clientY - r.top + 16, r.height - 105) + 'px';
+  tip.classList.add('show');
+}
+function hideTip() { tip.classList.remove('show'); }
+
+/* incidents */
+function renderIncidents() {
+  incLayer.innerHTML = '';
+  for (const inc of state.incidents) {
+    const e = EDGE_BY_ID[inc.edge];
+    const A = NODES[e.a], B = NODES[e.b];
+    const x = (A.x + B.x) / 2, y = (A.y + B.y) / 2;
+    const g = svgEl('g');
+    g.appendChild(svgEl('circle', {cx:x, cy:y, r:16, class:'inc-ring'}));
+    g.appendChild(svgEl('circle', {cx:x, cy:y, r:5,  class:'inc-core'}));
+    incLayer.appendChild(g);
+  }
+}
+
+/* ---------------- 9. COLORS & HELPERS ---------------- */
+function riskColor(c) {
+  c = Math.max(0, Math.min(1, c));
+  let a, b, t;
+  if (c < 0.5) { a = [16,185,129]; b = [245,158,11]; t = c / 0.5; }
+  else         { a = [245,158,11]; b = [239,68,68]; t = (c - 0.5) / 0.5; }
+  const r = Math.round(a[0] + (b[0]-a[0]) * t);
+  const g = Math.round(a[1] + (b[1]-a[1]) * t);
+  const bl = Math.round(a[2] + (b[2]-a[2]) * t);
+  return `rgb(${r},${g},${bl})`;
+}
+function fmtTime(m) {
+  const h = Math.floor(m / 60) % 24;
+  const mm = Math.floor(m % 60);
+  return String(h).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
+}
+
+/* ---------------- 10. UI RENDERERS ---------------- */
+const simTimeEl = document.getElementById('simTime');
+const predListEl = document.getElementById('predList');
+const transitEl = document.getElementById('transit');
+const rcNowEl = document.getElementById('rcNow');
+const rcPredEl = document.getElementById('rcPred');
+const rcNoteEl = document.getElementById('rcNote');
+
+/* transit routes */
+const TRANSIT = [
+  {name:'Line 1 · Central Ave', base:0.82, v:0.5},
+  {name:'Line 2 · Airport Rd',  base:0.66, v:0.4},
+  {name:'Line 3 · South Link',  base:0.52, v:0.35},
+  {name:'Line 4 · East Bypass', base:0.40, v:0.25},
+  {name:'Line 5 · West End',    base:0.58, v:0.3}
+];
+
+function renderTransit() {
+  const d = baseDemand(state.time) * state.demandMul;
+  transitEl.innerHTML = TRANSIT.map(r => {
+    const target = Math.min(1, r.base * (0.45 + 0.85 * d) + (Math.random() - 0.5) * 0.06);
+    r.v = r.v * 0.7 + target * 0.3;
+    const pct = Math.round(r.v * 100);
+    const col = riskColor(r.v * 0.95);
+    return `
+      <div class="tr">
+        <div class="tr-name">${r.name}</div>
+        <div class="tr-bar"><i style="width:${pct}%;background:${col}"></i></div>
+        <div class="tr-val" style="color:${col}">${pct}%</div>
+      </div>`;
+  }).join('');
+}
+
+function renderPredictions() {
+  const top = [...EDGES]
+    .sort((x, y) => state.predicted[y.id] - state.predicted[x.id])
+    .slice(0, 5);
+
+  predListEl.innerHTML = top.map(e => {
+    const p = state.predicted[e.id];
+    const col = riskColor(p);
+    return `
+      <div class="pred">
+        <div class="pred-top">
+          <span>${e.name}</span>
+          <span class="pv" style="color:${col}">${Math.round(p*100)}%</span>
+        </div>
+        <div class="bar"><i style="width:${Math.round(p*100)}%;background:${col}"></i></div>
+      </div>`;
+  }).join('');
+}
+
+function renderMap() {
+  for (const e of EDGES) {
+    const c = state.congestion[e.id];
+    const col = riskColor(c);
+    e.flowEl.setAttribute('stroke', col);
+    e.flowEl.setAttribute('stroke-width', (5.5 + c * 6).toFixed(1));
+    e.flowEl.setAttribute('opacity', (0.55 + c * 0.45).toFixed(2));
+    e.flowEl.classList.toggle('hot', c > 0.72);
+  }
+}
+
+function renderRoute() {
+  const nowR  = dijkstra('A', 'L', e => travelMinutes(e, state.congestion[e.id]));
+  const predR = dijkstra('A', 'L', e => travelMinutes(e, state.predicted[e.id]));
+  if (!nowR || !predR) return;
+
+  routeNowEl.setAttribute('points',  nowR.nodes.map(n => `${NODES[n].x},${NODES[n].y}`).join(' '));
+  routePredEl.setAttribute('points', predR.nodes.map(n => `${NODES[n].x},${NODES[n].y}`).join(' '));
+
+  const same = nowR.edges.map(e => e.id).join() === predR.edges.map(e => e.id).join();
+  routeNowEl.style.opacity = same ? '0' : '0.5';
+
+  rcNowEl.textContent  = nowR.time.toFixed(1) + ' min';
+  rcPredEl.textContent = predR.time.toFixed(1) + ' min';
+
+  if (same) {
+    rcNoteEl.style.color = '#047857';
+    rcNoteEl.textContent = '✓ Current route remains optimal under forecast.';
+  } else {
+    const save = nowR.time - predR.time;
+    if (save > 0.4) {
+      rcNoteEl.style.color = '#047857';
+      rcNoteEl.textContent = `↗ Switch to Route B — saves ${save.toFixed(1)} min vs. staying on Route A.`;
+    } else {
+      rcNoteEl.style.color = '#b45309';
+      rcNoteEl.textContent = '⚠ Forecast route change gives marginal benefit. Monitor.';
+    }
+  }
+}
+
+function renderMetrics() {
+  const highRisk = EDGES.filter(e => state.congestion[e.id] > 0.68).length;
+
+  state.stats.acc = Math.max(83, Math.min(94, state.stats.acc + (Math.random() - 0.5) * 0.6));
+  state.stats.co2 += 0.07 * (1 + Math.random());
+
+  document.getElementById('mAcc').textContent  = state.stats.acc.toFixed(1) + '%';
+  document.getElementById('mLead').textContent = state.stats.lead.toFixed(1) + ' min';
+  document.getElementById('mRisk').textContent = highRisk;
+  document.getElementById('mInc').textContent  = state.incidents.length;
+  document.getElementById('mVeh').textContent  = vehicles.length;
+  document.getElementById('mCo2').textContent  = state.stats.co2.toFixed(1) + ' kg';
+
+  document.getElementById('mRisk').className = 'mv ' + (highRisk > 5 ? 'r' : highRisk > 2 ? 'a' : 'g');
+  document.getElementById('mInc').className  = 'mv ' + (state.incidents.length ? 'r' : 'g');
+}
+
+function renderClock() {
+  simTimeEl.textContent = fmtTime(state.time);
+}
+
+/* ---------------- 11. VEHICLE ANIMATION ---------------- */
+function moveVehicles(dt) {
+  for (const v of vehicles) {
+    const c = state.congestion[v.edgeId] ?? 0.3;
+    const spd = (0.10 + 0.20 * (1 - c)) * state.speed;
+    v.u += spd * dt;
+    while (v.u > 2) v.u -= 2;
+
+    const e = EDGE_BY_ID[v.edgeId];
+    const A = NODES[e.a], B = NODES[e.b];
+    const t = v.u <= 1 ? v.u : 2 - v.u;
+
+    v.el.setAttribute('cx', (A.x + (B.x - A.x) * t).toFixed(1));
+    v.el.setAttribute('cy', (A.y + (B.y - A.y) * t).toFixed(1));
+  }
+}
+
+/* ---------------- 12. SIMULATION TICK ---------------- */
+function tick() {
+  state.time += 1;
+  updateIncidents();
+  computeCongestion();
+  computePrediction();
+  detectAlerts();
+
+  renderClock();
+  renderMap();
+  renderPredictions();
+  renderTransit();
+  renderRoute();
+  renderMetrics();
+}
+
+/* ---------------- 13. MAIN LOOP ---------------- */
+let lastFrame = performance.now();
+let accumulator = 0;
+
+function loop(now) {
+  const dt = Math.min((now - lastFrame) / 1000, 0.2);
+  lastFrame = now;
+
+  if (state.running) {
+    accumulator += dt;
+    const interval = 0.75 / state.speed;
+    let guard = 0;
+    while (accumulator >= interval && guard++ < 8) {
+      accumulator -= interval;
+      tick();
+    }
+  }
+  moveVehicles(dt);
+  requestAnimationFrame(loop);
+}
+
+/* ---------------- 14. CONTROLS ---------------- */
+const playBtn = document.getElementById('playBtn');
+playBtn.addEventListener('click', () => {
+  state.running = !state.running;
+  playBtn.textContent = state.running ? '⏸ Pause' : '▶ Resume';
+  playBtn.classList.toggle('primary', state.running);
+});
+
+document.getElementById('incidentBtn').addEventListener('click', () => {
+  const hot = ['FG','BC','CG','EF','GK'];
+  const id = hot[Math.floor(Math.random() * hot.length)];
+  spawnIncident(id, 0.75 + Math.random() * 0.2, 'Manual incident injection');
+  for (let i = 0; i < 3; i++) computeCongestion();
+});
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    state.speed = Number(chip.dataset.speed);
+  });
+});
+
+document.querySelectorAll('.sc').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sc').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyScenario(btn.dataset.sc);
+  });
+});
+
+function applyScenario(s) {
+  state.scenario = s;
+  state.demandMul = 1;
+  state.weather = 0;
+  state.incidents = [];
+
+  switch (s) {
+    case 'rush':
+      state.time = 8 * 60 + 10;
+      state.demandMul = 1.35;
+      break;
+    case 'accident':
+      state.demandMul = 1.15;
+      spawnIncident('FG', 0.95, 'Multi-vehicle collision');
+      break;
+    case 'rain':
+      state.weather = 0.14;
+      state.demandMul = 1.10;
+      break;
+    case 'event':
+      state.time = 17 * 60 + 20;
+      state.demandMul = 1.25;
+      spawnIncident('BC', 0.70, 'Stadium egress surge');
+      break;
+    case 'night':
+      state.time = 23 * 60 + 20;
+      state.demandMul = 0.55;
+      break;
+    default:
+      state.time = 7 * 60;
+  }
+
+  /* reset smoothing history so the scenario change is visible immediately */
+  EDGES.forEach(e => {
+    state.history[e.id] = [];
+    state.above[e.id] = false;
+    state.congestion[e.id] = 0.25;
+  });
+
+  for (let i = 0; i < 5; i++) computeCongestion();
+  renderIncidents();
+  renderClock();
+  renderMap();
+
+  pushAlert({
+    level: 'info',
+    badge: 'SCENARIO',
+    time: state.time,
+    name: 'Scenario loaded',
+    msg: `Simulation switched to "${s.toUpperCase()}". MobiLens is re-baselining corridor forecasts.`
+  });
+}
+
+/* ---------------- 15. BOOT ---------------- */
+function boot() {
+  for (let i = 0; i < 6; i++) { computeCongestion(); computePrediction(); }
+  renderIncidents();
+  renderClock();
+  renderMap();
+  renderPredictions();
+  renderTransit();
+  renderRoute();
+  renderMetrics();
+
+  pushAlert({
+    level: 'info',
+    badge: 'SYSTEM',
+    time: state.time,
+    name: 'MobiLens engine online',
+    msg: 'Monitoring 17 corridors · 12 junctions · 5 transit lines. Predictive horizon: 10 minutes.'
+  });
+
+  requestAnimationFrame(loop);
+}
+
+boot();
+</script>
+</body>
+</html>
